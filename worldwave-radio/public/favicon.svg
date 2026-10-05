@@ -1,1 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#d5f77c"/><path d="M6 23V10l10 11 10-11v13" fill="none" stroke="#10150f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">MichaelWave — Queen Idia-inspired emblem</title>
+  <rect width="96" height="96" rx="23" fill="#17291f"/>
+  <rect x="2" y="2" width="92" height="92" rx="21" fill="none" stroke="#c9d795" stroke-opacity=".4"/>
+  <!-- A sculptural ivory face, ornamental crest and coral-bead collar. -->
+  <path d="M25 36 21 27 27 19 35 22 38 12 46 17 48 9 51 17 59 12 62 22 70 19 76 27 71 36Z" fill="#e2c88b"/>
+  <g fill="#f7edcd" stroke="#17291f" stroke-width="2.5">
+    <ellipse cx="29" cy="28" rx="5" ry="7" transform="rotate(-24 29 28)"/>
+    <ellipse cx="39" cy="23" rx="5" ry="8" transform="rotate(-12 39 23)"/>
+    <ellipse cx="49" cy="21" rx="5" ry="8"/>
+    <ellipse cx="59" cy="23" rx="5" ry="8" transform="rotate(12 59 23)"/>
+    <ellipse cx="69" cy="28" rx="5" ry="7" transform="rotate(24 69 28)"/>
+  </g>
+  <path d="M26 37Q48 26 70 37L68 43Q48 35 28 43Z" fill="#d5f77c"/>
+  <path d="M26 45Q19 44 22 55L28 60M70 45Q77 44 74 55L68 60" fill="#e2c88b" stroke="#17291f" stroke-width="2"/>
+  <path d="M29 40Q48 31 67 40L65 59Q63 72 48 80Q33 72 31 59Z" fill="#f4e9c8"/>
+  <path d="M48 37Q60 37 67 40L65 59Q63 72 48 80L54 65 53 50Z" fill="#dfc996"/>
+  <g fill="none" stroke="#263527" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M44 39v6m4-7v7m4-6v6" stroke-width="1.6"/>
+    <path d="M34 51q5-4 10 0m8 0q5-4 10 0" stroke-width="2.6"/>
+    <path d="M48 51 45 62q3 2 6 0" stroke-width="2"/>
+    <path d="M41 68q7-3 14 0m-11 3q4 2 8 0" stroke-width="1.8"/>
+  </g>
+  <path d="M28 69Q48 87 68 69L70 77Q48 96 26 77Z" fill="#b85d40"/>
+  <path d="M31 81Q48 91 65 81" fill="none" stroke="#e6c78e" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#edbd87"><circle cx="31" cy="75" r="2"/><circle cx="39" cy="80" r="2"/><circle cx="48" cy="82" r="2"/><circle cx="57" cy="80" r="2"/><circle cx="65" cy="75" r="2"/></g>
+</svg>

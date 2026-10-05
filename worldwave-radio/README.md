@@ -73,6 +73,8 @@ Your existing external Prometheus/Grafana configuration and dashboard are docume
 
 ## Validation and limits
 
+The pipeline emails white-background, landscape PDF table reports to **blesosas222@gmail.com**: `trivy-report.pdf`, `sonarqube-report.pdf`, and `security-summary.pdf`. It also keeps the PDFs and original JSON in the `security-pdf-reports` GitHub artifact. Set `GMAIL_USERNAME` and `GMAIL_APP_PASSWORD` in GitHub Secrets for delivery. SonarQube export uses the current scanner task and needs a token with permission to read the project's measures and quality gate. Missing/failed reports are explicitly marked unavailable, never reported as a clean scan. The renderer uses ReportLab 5.0.1; these reports do not require SonarQube's paid PDF reporting feature.
+
 `npm test` checks combined geographic filtering, malicious URL rejection and HTTP security/path handling. `npm run check` checks JavaScript syntax; `npm run build` creates a gzip copy of the directory for delivery. Deployment setup is documented in `../k8s/README.md`. Docker, SonarQube, AWS, SMTP and real browser audio require their respective running services for end-to-end verification. Optional WebMCP search registration is feature-detected; its browser-specific validation is unavailable in this workspace.
 
 The initial Sites registration was superseded by the requested EKS deployment. No Sites deployment is used by this project; ignored `.openai` metadata is not part of the Docker build or CI.

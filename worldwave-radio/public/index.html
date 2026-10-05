@@ -5,7 +5,7 @@
   <title>MichaelWave Radio — A world of sound</title>
   <meta name="author" content="Michael">
   <meta name="description" content="Welcome to MichaelWave Radio, owned by Michael. Discover internet radio from Benin City, Nigeria, Africa, Europe, the Americas and beyond.">
-  <link rel="icon" href="favicon.svg?v=michaelwave" type="image/svg+xml"><link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.svg?v=idia-1" type="image/svg+xml"><link rel="stylesheet" href="style.css">
   <link rel="preload" href="fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script type="module" src="app.js"></script>
@@ -13,7 +13,7 @@
 <body>
   <a class="skip" href="#stations">Skip to stations</a>
   <header>
-    <a class="brand" href="./" aria-label="MichaelWave Radio home"><span class="brandmark" aria-hidden="true">m.</span>michaelwave<span class="brand-radio">RADIO</span></a>
+    <a class="brand" href="./" aria-label="MichaelWave Radio home"><span class="brandmark" aria-hidden="true"><img src="favicon.svg?v=idia-1" alt="" width="42" height="42"></span>michaelwave<span class="brand-radio">RADIO</span></a>
     <nav class="header-nav" aria-label="Main navigation"><a class="nav-current" href="#stations">Discover</a><a href="#browse">Browse the world</a></nav>
     <span class="header-note"><span class="signal-dot" aria-hidden="true"></span>Good sound. No borders.</span>
     <button id="motion-toggle" class="motion-toggle" type="button" aria-label="Page animations" aria-pressed="true"><span aria-hidden="true">∿</span><span id="motion-label">Motion on</span></button>
@@ -87,8 +87,8 @@
       <details class="visitor-details"><summary>Daily visitor records</summary><div class="visitor-table-wrap"><table><caption>Recent days with visits</caption><thead><tr><th scope="col">Date (UTC)</th><th scope="col">Visitors</th><th scope="col">Visits</th></tr></thead><tbody id="visitor-records"></tbody></table></div><button id="download-visitors" type="button" disabled>Download last 30 days (CSV)</button></details>
       <p id="visitors-since" class="hint" role="status">Loading visitor statistics…</p><p class="visitor-privacy">An anonymous browser cookie helps count returning visitors. No names, email addresses or IP addresses are stored in these statistics. Different browsers or cleared cookies may count as new visitors.</p>
     </section>
-    <footer><div class="owner-credit"><span class="owner-mark" aria-hidden="true">m.</span><div><strong>MichaelWave Radio</strong><span>A world of sound. Owned by Michael.</span></div></div><p>Global directory by <a href="https://www.radio-browser.info/" target="_blank" rel="noopener noreferrer">Radio Browser</a>, plus researched Edo listings. <span id="updated"></span></p><p>Playback uses online streams. Availability varies; coverage is not guaranteed complete. Edo station sources are linked on each card.</p><button id="refresh" type="button">Refresh directory</button></footer>
+    <footer><div class="owner-credit"><span class="owner-mark" aria-hidden="true"><img src="favicon.svg?v=idia-1" alt="" width="34" height="34"></span><div><strong>MichaelWave Radio</strong><span>A world of sound. Owned by Michael.</span></div></div><p>Global directory by <a href="https://www.radio-browser.info/" target="_blank" rel="noopener noreferrer">Radio Browser</a>, plus researched Edo listings. <span id="updated"></span></p><p>Playback uses online streams. Availability varies; coverage is not guaranteed complete. Edo station sources are linked on each card.</p><button id="refresh" type="button">Refresh directory</button></footer>
   </main>
-  <section id="player" class="player" aria-label="Radio player" data-status="idle"><div id="player-art" class="player-art" aria-hidden="true"><img class="radio-icon" src="radio.svg" alt=""></div><div class="playing-info"><span class="player-eyebrow">YOUR PERSONAL AIRWAVES</span><p id="player-name">Your next discovery awaits</p><span id="player-status" role="status">Choose a station to start listening</span><a id="station-link" hidden target="_blank" rel="noopener noreferrer">Station website</a></div><div class="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><a id="view-map" class="view-map" href="#station-map" hidden>View map ↗</a><button id="toggle" class="play-main" aria-label="Play station" disabled>▶</button><label class="volume">Volume<input id="volume" type="range" min="0" max="1" step="0.05" value="0.8"></label></section>
+  <section id="player" class="player" aria-label="Radio player" data-status="idle"><div id="player-art" class="player-art" aria-hidden="true"><img class="brand-emblem" src="favicon.svg?v=idia-1" alt=""></div><div class="playing-info"><span class="player-eyebrow">YOUR PERSONAL AIRWAVES</span><p id="player-name">Your next discovery awaits</p><span id="player-status" role="status">Choose a station to start listening</span><a id="station-link" hidden target="_blank" rel="noopener noreferrer">Station website</a></div><div class="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><a id="view-map" class="view-map" href="#station-map" hidden>View map ↗</a><button id="toggle" class="play-main" aria-label="Play station" disabled>▶</button><label class="volume">Volume<input id="volume" type="range" min="0" max="1" step="0.05" value="0.8"></label></section>
   <audio id="audio" preload="none"></audio>
 </body></html>

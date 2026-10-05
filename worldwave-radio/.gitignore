@@ -7,3 +7,5 @@ reports/
 image.tar
 .env
 data/
+__pycache__/
+*.pyc

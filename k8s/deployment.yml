@@ -3,66 +3,25 @@ kind: Deployment
 metadata:
   name: worldwave-radio
   namespace: worldwave-radio
+
 spec:
   replicas: 1
-  progressDeadlineSeconds: 600
-  revisionHistoryLimit: 3
-  strategy:
-    type: Recreate
+
   selector:
-    matchLabels: {app: worldwave-radio}
+    matchLabels:
+      app: worldwave-radio
+
   template:
     metadata:
-      labels: {app: worldwave-radio}
+      labels:
+        app: worldwave-radio
+
     spec:
-      automountServiceAccountToken: false
-      terminationGracePeriodSeconds: 30
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        seccompProfile: {type: RuntimeDefault}
       containers:
-        - name: radio
+        - name: worldwave-radio
           image: bleosas/devsecops-app:version4
-          imagePullPolicy: IfNotPresent
-          ports: [{name: http, containerPort: 8080}]
-          env: [{name: DATA_DIR, value: /app/data}]
-          volumeMounts: [{name: visitor-data, mountPath: /app/data}]
-          resources:
-            requests: {cpu: 100m, memory: 128Mi}
-            limits: {cpu: 500m, memory: 256Mi}
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities: {drop: [ALL]}
-          startupProbe:
-            httpGet: {path: /healthz, port: http}
-            periodSeconds: 5
-            timeoutSeconds: 2
-            failureThreshold: 30
-          readinessProbe:
-            httpGet: {path: /healthz, port: http}
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet: {path: /healthz, port: http}
-            initialDelaySeconds: 10
-            periodSeconds: 20
-      volumes:
-        - name: visitor-data
-          persistentVolumeClaim: {claimName: worldwave-radio-data}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: worldwave-radio-data
-  namespace: worldwave-radio
-  annotations:
-    argocd.argoproj.io/sync-options: Prune=false,Delete=false
-spec:
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 1Gi
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 8080
+              name: http

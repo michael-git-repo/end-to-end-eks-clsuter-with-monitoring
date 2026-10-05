@@ -234,6 +234,74 @@ jobs:
           git push
 
 
+      - name: Generate PDF summary
+        if: always()
+        run: |
+          python -m pip install --quiet reportlab
+
+          python - <<'PY'
+          import os
+          from reportlab.lib.pagesizes import letter
+          from reportlab.pdfgen import canvas
+
+          repo = "${{ github.repository }}"
+          branch = "${{ github.ref_name }}"
+          commit = "${{ github.sha }}"
+          status = "${{ job.status }}"
+
+          critical = 0
+          high = 0
+          if os.path.exists("trivy-report.json"):
+              try:
+                  import json
+                  with open("trivy-report.json", "r", encoding="utf-8") as f:
+                      trivy_data = json.load(f)
+                  for result in trivy_data.get("Results", []):
+                      for vuln in result.get("Vulnerabilities", []):
+                          sev = (vuln.get("Severity") or "").upper()
+                          if sev == "CRITICAL":
+                              critical += 1
+                          elif sev == "HIGH":
+                              high += 1
+              except Exception:
+                  pass
+
+          pdf = canvas.Canvas("security-summary.pdf", pagesize=letter)
+          pdf.setTitle("DevSecOps Pipeline Report")
+          pdf.setFont("Helvetica-Bold", 18)
+          pdf.drawString(50, 760, "DevSecOps Pipeline Report")
+
+          pdf.setFont("Helvetica-Bold", 12)
+          y = 720
+          for label, value in [
+              ("Repository:", repo),
+              ("Branch:", branch),
+              ("Commit:", commit),
+              ("Pipeline Status:", status),
+              ("Critical Findings:", str(critical)),
+              ("High Findings:", str(high)),
+          ]:
+              pdf.setFont("Helvetica-Bold", 12)
+              pdf.drawString(50, y, label)
+              pdf.setFont("Helvetica", 11)
+              pdf.drawString(180, y, str(value))
+              y -= 22
+
+          pdf.setFont("Helvetica-Bold", 12)
+          pdf.drawString(50, y - 25, "Summary:")
+          pdf.setFont("Helvetica", 11)
+          summary_lines = [
+              "Use PDF for: executive summary, scan overview, and security result summary.",
+              "Use JSON/TXT for: raw report data, exact scanner output, and machine-readable details.",
+              "Trivy and SonarQube raw outputs are attached for deeper analysis.",
+          ]
+          for line in summary_lines:
+              pdf.drawString(50, y - 45, line[:95])
+              y -= 18
+
+          pdf.save()
+          PY
+
       - name: Prepare email attachments
         if: always()
         run: |
@@ -241,6 +309,7 @@ jobs:
           test -f sonarqube-report.json || printf '{"message":"SonarQube report was not generated; inspect the workflow logs."}\n' > sonarqube-report.json
           mkdir -p worldwave-radio/.scannerwork
           test -f worldwave-radio/.scannerwork/report-task.txt || printf 'SonarQube scanner metadata was not generated; inspect the workflow logs.\n' > worldwave-radio/.scannerwork/report-task.txt
+          test -f security-summary.pdf || printf 'PDF summary unavailable.\n' > security-summary.txt
 
 
       # ====================================================
@@ -271,8 +340,8 @@ jobs:
           # Send the email to yourself
           to: ${{ secrets.GMAIL_USERNAME }}
 
-          # Attach Trivy and SonarQube reports
-          attachments: trivy-report.json,sonarqube-report.json,worldwave-radio/.scannerwork/report-task.txt
+          # Attach PDF summary for executive reporting plus raw JSON/TXT reports for detailed analysis.
+          attachments: trivy-report.json,sonarqube-report.json,worldwave-radio/.scannerwork/report-task.txt,security-summary.pdf
 
           from: GitHub DevSecOps Pipeline
 
@@ -313,7 +382,8 @@ jobs:
             Trivy Security Scan:
             Completed
 
-            The Trivy JSON report, SonarQube measures report, and analysis metadata are attached.
+            PDF summary attached for executive summary, scan overview, and security result summary.
+            JSON/TXT reports are attached for raw report data, exact scanner output, and machine-readable details.
 
             ================================
 

@@ -1,0 +1,305 @@
+name: DevSecOps Pipeline
+
+# ==========================================================
+# WHEN SHOULD THE PIPELINE RUN?
+# ==========================================================
+
+on:
+  push:
+    branches:
+      - main
+
+  # Allows you to run the pipeline manually from GitHub
+  workflow_dispatch:
+
+
+# ==========================================================
+# PERMISSIONS
+# Needed because the workflow updates deployment.yml
+# ==========================================================
+
+permissions:
+  contents: write
+
+
+# ==========================================================
+# MAIN PIPELINE
+# ==========================================================
+
+jobs:
+
+  devsecops:
+
+    # GitHub provides this Ubuntu machine automatically
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ====================================================
+      # 1. DOWNLOAD CODE
+      # ====================================================
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+
+      # ====================================================
+      # 2. INSTALL NODE.JS
+      # ====================================================
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: worldwave-radio/package-lock.json
+
+
+      # ====================================================
+      # 3. INSTALL APPLICATION PACKAGES
+      # ====================================================
+
+      - name: Install dependencies
+        working-directory: worldwave-radio
+        run: npm ci
+
+
+      # ====================================================
+      # 4. TEST APPLICATION
+      # ====================================================
+
+      # If your project does not have npm tests yet,
+      # this will not stop the whole pipeline.
+      - name: Run tests
+        working-directory: worldwave-radio
+        run: npm test
+        continue-on-error: true
+
+
+      # ====================================================
+      # 5. SONARQUBE SCAN
+      # ====================================================
+
+      # Sends the source code analysis to your SonarQube server.
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          projectBaseDir: worldwave-radio
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+
+      # ====================================================
+      # 6. WAIT FOR SONARQUBE QUALITY GATE
+      # ====================================================
+
+      # Checks whether the SonarQube Quality Gate passed.
+      - name: SonarQube Quality Gate
+        id: sonarqube
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        with:
+          scanMetadataReportFile: worldwave-radio/.scannerwork/report-task.txt
+        timeout-minutes: 5
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+
+      # ====================================================
+      # 7. LOGIN TO DOCKER HUB
+      # ====================================================
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: bleosas
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+
+      # ====================================================
+      # 8. BUILD DOCKER IMAGE
+      # ====================================================
+
+      # Each image gets the GitHub commit number as its tag.
+      # This gives every build a unique version.
+      - name: Build Docker image
+        run: |
+          docker build \
+          -t bleosas/devsecops-app:${{ github.sha }} worldwave-radio
+
+
+      # ====================================================
+      # 9. TRIVY SECURITY SCAN
+      # ====================================================
+
+      # Scan the Docker image for vulnerabilities.
+      # The report is saved as trivy-report.txt.
+      - name: Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'bleosas/devsecops-app:${{ github.sha }}'
+          format: 'table'
+          output: 'trivy-report.txt'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+
+      # ====================================================
+      # 10. SHOW TRIVY REPORT
+      # ====================================================
+
+      - name: Show Trivy Report
+        if: always()
+        run: |
+          echo "========== TRIVY REPORT =========="
+          cat trivy-report.txt || true
+
+
+      # ====================================================
+      # 11. SAVE TRIVY REPORT IN GITHUB
+      # ====================================================
+
+      # You can download the report from the GitHub Actions run.
+      - name: Upload Trivy Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-security-report
+          path: trivy-report.txt
+          retention-days: 30
+
+
+      # ====================================================
+      # 12. PUSH DOCKER IMAGE
+      # ====================================================
+
+      - name: Push Docker image
+        run: |
+          docker push \
+          bleosas/devsecops-app:${{ github.sha }}
+
+
+      # ====================================================
+      # 13. UPDATE KUBERNETES IMAGE
+      # ====================================================
+
+      # IMPORTANT:
+      # Change k8s/deployment.yml below if your Kubernetes
+      # deployment file is stored somewhere else.
+      #
+      # This replaces the old Docker image with the new image.
+      - name: Update Kubernetes deployment
+        run: |
+
+          sed -i \
+          "s|image: .*|image: bleosas/devsecops-app:${{ github.sha }}|g" \
+          k8s/deployment.yml
+
+
+      # ====================================================
+      # 14. COMMIT UPDATED deployment.yml
+      # ====================================================
+
+      # Pushes the new image tag back to GitHub.
+      # Argo CD will detect this Git change.
+      - name: Commit Kubernetes image update
+        run: |
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add k8s/deployment.yml
+
+          git diff --cached --quiet || \
+          git commit -m "Update image to ${{ github.sha }}"
+
+          git push
+
+
+      # ====================================================
+      # 15. EMAIL PIPELINE RESULT
+      # ====================================================
+
+      # Runs even when an earlier step fails.
+      - name: Send Gmail Notification
+        if: always()
+
+        uses: dawidd6/action-send-mail@v6
+
+        with:
+
+          # Gmail SMTP server
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+
+          # Stored safely in GitHub Secrets
+          username: ${{ secrets.GMAIL_USERNAME }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+
+          # Email title
+          subject: >
+            DevSecOps Pipeline - ${{ job.status }}
+
+          # Send the email to yourself
+          to: ${{ secrets.GMAIL_USERNAME }}
+
+          from: GitHub DevSecOps Pipeline
+
+          # Email content
+          body: |
+
+            DevSecOps Pipeline Report
+
+            ================================
+
+            Repository:
+            ${{ github.repository }}
+
+            Branch:
+            ${{ github.ref_name }}
+
+            Commit:
+            ${{ github.sha }}
+
+            ================================
+
+            Pipeline Status:
+            ${{ job.status }}
+
+            ================================
+
+            SonarQube Scan:
+            Completed
+
+            SonarQube Quality Gate:
+            ${{ steps.sonarqube.outcome }}
+
+            ================================
+
+            Trivy Security Scan:
+            Completed
+
+            The Trivy report is available as a
+            GitHub Actions artifact.
+
+            ================================
+
+            Docker Image:
+
+            bleosas/devsecops-app:${{ github.sha }}
+
+            ================================
+
+            GitHub Actions Report:
+
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ================================
+
+            If the deployment update was successful,
+            Argo CD will detect the new deployment.yml
+            and synchronise the application to EKS.

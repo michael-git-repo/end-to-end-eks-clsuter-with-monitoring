@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: worldwave-radio
+  namespace: worldwave-radio
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+spec:
+  type: LoadBalancer
+  # For EKS Auto Mode, change this to eks.amazonaws.com/nlb.
+  loadBalancerClass: service.k8s.aws/nlb
+  selector:
+    app: worldwave-radio
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

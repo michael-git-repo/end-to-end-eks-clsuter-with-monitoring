@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MichaelWave Radio — A world of sound</title>
+  <meta name="author" content="Michael">
+  <meta name="description" content="Welcome to MichaelWave Radio, owned by Michael. Discover internet radio from Benin City, Nigeria, Africa, Europe, the Americas and beyond.">
+  <link rel="icon" href="favicon.svg?v=michaelwave" type="image/svg+xml"><link rel="stylesheet" href="style.css">
+  <link rel="preload" href="fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#stations">Skip to stations</a>
+  <header>
+    <a class="brand" href="./" aria-label="MichaelWave Radio home"><span class="brandmark" aria-hidden="true">m.</span>michaelwave<span class="brand-radio">RADIO</span></a>
+    <nav class="header-nav" aria-label="Main navigation"><a class="nav-current" href="#stations">Discover</a><a href="#browse">Browse the world</a></nav>
+    <span class="header-note"><span class="signal-dot" aria-hidden="true"></span>Good sound. No borders.</span>
+    <button id="motion-toggle" class="motion-toggle" type="button" aria-label="Page animations" aria-pressed="true"><span aria-hidden="true">∿</span><span id="motion-label">Motion on</span></button>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="hero-title">
+      <div class="intro-copy">
+        <p class="eyebrow"><span class="signal-dot" aria-hidden="true"></span>YOUR WORLD. YOUR FREQUENCY.</p>
+        <h1 id="hero-title">A world of sound.<br><span>One place to listen.</span></h1>
+        <p class="hero-description">A familiar voice from home. A new favourite across the ocean.<br class="desktop-break"> Find your frequency, wherever life takes you.</p>
+        <div class="hero-actions"><a class="primary-link" href="#stations">Explore stations <span aria-hidden="true">↗</span></a><span class="hero-caption">Press play. Go somewhere.</span></div>
+        <div class="hero-stats" aria-label="Directory coverage"><div><strong id="total-stations">Worldwide</strong><span>stations to explore</span></div><div><strong id="total-countries">Across borders</strong><span>countries &amp; territories</span></div><div><strong id="visitor-count">—</strong><span><a href="#visitor-stats">visitors so far</a></span></div></div>
+      </div>
+      <div id="station-map" class="globe-scene station-map" role="region" aria-label="Station location map" tabindex="-1">
+        <div class="map-heading"><span class="map-eyebrow">EXPLORE THE AIRWAVES</span><div class="globe-label"><span class="signal-dot" aria-hidden="true"></span><span id="globe-badge">WORLD VIEW</span></div></div>
+        <div class="map-stage">
+        <div id="globe-country-badge" class="map-country-badge" hidden><img id="globe-country-flag" width="28" height="21" alt=""><span id="globe-country-name"></span></div>
+        <span class="map-north" aria-hidden="true">N<br>↑</span>
+        <svg id="globe-svg" class="globe" viewBox="0 0 400 400" fill="none" role="img" tabindex="0" aria-describedby="globe-help" aria-label="Interactive world map. Play a station to explore its location.">
+          <defs><radialGradient id="globe-light" cx="32%" cy="25%" r="80%"><stop stop-color="#304b40"/><stop offset=".65" stop-color="#172c25"/><stop offset="1" stop-color="#0c1915"/></radialGradient><radialGradient id="land-light" cx="30%" cy="25%" r="85%"><stop stop-color="#aac885"/><stop offset="1" stop-color="#547251"/></radialGradient></defs>
+          <circle id="globe-atmosphere" cx="200" cy="185" r="158" fill="none" stroke="#bddf9a" stroke-opacity=".2" stroke-width="3"/>
+          <path id="globe-ocean" fill="url(#globe-light)" stroke="#849d68" stroke-opacity=".45"/>
+          <path id="globe-land" fill="url(#land-light)" fill-opacity=".36" stroke="#bfd99d" stroke-opacity=".5" stroke-width=".55"/>
+          <path id="globe-country" fill="#d5f77c" fill-opacity=".25" stroke="#d5f77c" stroke-opacity=".7" stroke-width=".8"/>
+          <path id="globe-grid" stroke="#c2d9b5" stroke-opacity=".12" stroke-width=".55"/>
+          <g id="globe-pin" visibility="hidden"><circle class="map-pulse" r="19" stroke="#d5f77c" stroke-opacity=".5"/><circle r="10" fill="#d5f77c" fill-opacity=".18"/><circle r="5" fill="#e0ff92" stroke="#142019" stroke-width="2"/><g id="globe-pin-flag" display="none" aria-hidden="true"><path d="M10 2v-31" stroke="#deedc9" stroke-width="1.5"/><image id="globe-pin-flag-image" x="11" y="-30" width="30" height="22.5" preserveAspectRatio="xMidYMid meet"/></g><g id="globe-pin-label"><path d="M0 8v15" stroke="#d5f77c" stroke-width="1.5"/><rect x="-102" y="22" width="204" height="29" rx="9" fill="#17251c" stroke="#92b46b" stroke-opacity=".8"/><text id="globe-pin-name" y="41" text-anchor="middle" fill="#eff7e5" font-size="10.5"></text></g></g>
+        </svg>
+        <span class="map-gesture" aria-hidden="true">↔ &nbsp; Drag to explore</span>
+        </div>
+        <div class="map-toolbar" role="group" aria-label="Map controls"><div class="map-zoom-controls"><button id="globe-zoom-out" type="button" aria-label="Zoom out">−</button><output id="globe-zoom-level" aria-label="Map zoom">1.0×</output><button id="globe-zoom-in" type="button" aria-label="Zoom in">+</button></div><button id="globe-reset" type="button" title="Reset to world view" aria-label="Reset to world view">↺</button><button id="globe-recentre" type="button" disabled>Back to station <span aria-hidden="true">⌖</span></button></div>
+        <p id="globe-help" class="sr-only">Drag the globe to rotate it. When the globe is focused, use arrow keys to rotate, plus or minus to zoom, and Home to reset. Back to station centres your selected radio station.</p>
+        <div class="frequency-tag"><span class="frequency-icon" aria-hidden="true">♫</span><div><strong id="globe-station">Where will you listen?</strong><span id="globe-location">Play a station to find it on the globe.</span></div><div class="mini-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
+        <span id="globe-coordinate" class="globe-coordinate">ROTATE · ZOOM · DISCOVER</span>
+      </div>
+    </section>
+    <section class="discovery" aria-labelledby="discovery-title">
+      <div class="section-heading"><div><p class="eyebrow">A LITTLE CURIOSITY GOES A LONG WAY</p><h2 id="discovery-title">Where to next?</h2></div><span>Four places. Countless voices.</span></div>
+      <div class="destination-grid">
+        <button class="destination destination-home" data-destination="benin"><span class="destination-kicker">CLOSER TO HOME</span><strong>Benin City</strong><span>Familiar voices. Right at home.</span><span class="destination-art" aria-hidden="true">&#9678;</span><span class="destination-arrow" aria-hidden="true">&#8599;</span></button>
+        <button class="destination destination-africa" data-destination="africa"><span class="destination-kicker">FEEL THE RHYTHM</span><strong>Across Africa</strong><span>A continent of discoveries.</span><span class="destination-art" aria-hidden="true">&#8779;</span><span class="destination-arrow" aria-hidden="true">&#8599;</span></button>
+        <button class="destination destination-europe" data-destination="europe"><span class="destination-kicker">TAKE THE SCENIC ROUTE</span><strong>Hello, Europe</strong><span>Your next favourite frequency.</span><span class="destination-art" aria-hidden="true">&#10035;</span><span class="destination-arrow" aria-hidden="true">&#8599;</span></button>
+        <button class="destination destination-americas" data-destination="americas"><span class="destination-kicker">ACROSS THE OCEAN</span><strong>The Americas</strong><span>Make a little room for something new.</span><span class="destination-art" aria-hidden="true">&#9673;</span><span class="destination-arrow" aria-hidden="true">&#8599;</span></button>
+      </div>
+    </section>
+    <section id="browse" class="browse-panel" aria-label="Find a radio station">
+    <div class="browse-heading"><p class="eyebrow">FIND YOUR FREQUENCY</p><span>Start somewhere. Listen anywhere.</span></div>
+    <nav class="regions" aria-label="Browse regions"><button data-region="" aria-pressed="true">Everywhere</button><button data-country="NG" aria-pressed="false">Nigeria</button><button data-region="Africa" aria-pressed="false">Africa</button><button data-region="Americas" aria-pressed="false">Americas</button><button data-region="Europe" aria-pressed="false">Europe</button><button data-region="Asia" aria-pressed="false">Asia</button><button data-region="Oceania" aria-pressed="false">Oceania</button></nav>
+    <nav class="regions local-regions" aria-label="Browse Edo State"><span class="local-label">CLOSER TO HOME</span><button data-country="NG" data-state="Edo" aria-pressed="false">Edo State <span aria-hidden="true">↗</span></button><button data-country="NG" data-state="Edo" data-city="Benin City" aria-pressed="false">Benin City <span aria-hidden="true">↗</span></button></nav>
+    <div class="sound-shortcuts" role="group" aria-label="Music and talk shortcuts"><span>IN THE MOOD FOR</span><button data-sound="afrobeats" aria-pressed="false">Afrobeats</button><button data-sound="jazz" aria-pressed="false">Jazz</button><button data-sound="gospel" aria-pressed="false">Gospel</button><button data-sound="classical" aria-pressed="false">Classical</button><button data-sound="news" aria-pressed="false">News &amp; talk</button><button data-sound="chill" aria-pressed="false">Chill</button></div>
+    <form id="filters" class="filters" role="search">
+      <label class="search">Station or sound<span class="search-field"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="query" type="search" placeholder="Name, genre or language" autocomplete="off"></span></label>
+      <label>Country<select id="country"><option value="">All countries</option></select></label>
+      <label>State / region<select id="state"><option value="">All states / regions</option></select></label>
+      <label>City<input id="city" type="search" placeholder="e.g. Benin City" aria-describedby="city-help"></label>
+      <button id="reset" type="button" class="reset">Reset</button>
+    </form>
+    <p id="city-help" class="hint">City search matches known cities, station names, location text and tags. Edo listings include FM stations with no confirmed online stream.</p>
+    </section>
+    <section id="stations" aria-labelledby="results-title" tabindex="-1">
+      <div class="results-head"><div><p class="eyebrow">EXPLORE THE AIRWAVES</p><h2 id="results-title">Around the world</h2></div><p id="count" role="status">Loading the directory…</p></div>
+      <div class="collection-toolbar"><div class="collection-tabs" role="group" aria-label="Your station collection"><button data-collection="all" aria-pressed="true">Discover</button><button data-collection="saved" aria-pressed="false">Favourites <span id="saved-count">0</span></button><button data-collection="recent" aria-pressed="false">Recently played</button></div><button id="surprise" class="surprise-button" disabled><span aria-hidden="true">&#10022;</span> Surprise me</button></div>
+      <div class="collection-note"><span id="library-note">Save the stations you love. Your favourites stay in this browser.</span><button id="clear-recent" hidden>Clear listening history</button></div>
+      <div id="library-feedback" class="sr-only" role="status"></div>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <div id="grid" class="grid" aria-busy="true"><div class="loading-card" aria-hidden="true"></div><div class="loading-card" aria-hidden="true"></div><div class="loading-card" aria-hidden="true"></div></div>
+      <div class="pagination"><button id="more" hidden>Show more stations</button></div>
+    </section>
+    <section id="visitor-stats" class="visitor-panel" aria-labelledby="visitor-title">
+      <div class="results-head"><div><p class="eyebrow">THE MICHAELWAVE COMMUNITY</p><h2 id="visitor-title">Every visit is a connection.</h2></div><span class="visitor-note">Anonymous visitor statistics</span></div>
+      <div class="visitor-totals"><div><strong id="visitors-total">—</strong><span>Total visitors</span></div><div><strong id="visits-total">—</strong><span>Total visits</span></div><div><strong id="visitors-today">—</strong><span>Visitors today</span></div></div>
+      <details class="visitor-details"><summary>Daily visitor records</summary><div class="visitor-table-wrap"><table><caption>Recent days with visits</caption><thead><tr><th scope="col">Date (UTC)</th><th scope="col">Visitors</th><th scope="col">Visits</th></tr></thead><tbody id="visitor-records"></tbody></table></div><button id="download-visitors" type="button" disabled>Download last 30 days (CSV)</button></details>
+      <p id="visitors-since" class="hint" role="status">Loading visitor statistics…</p><p class="visitor-privacy">An anonymous browser cookie helps count returning visitors. No names, email addresses or IP addresses are stored in these statistics. Different browsers or cleared cookies may count as new visitors.</p>
+    </section>
+    <footer><div class="owner-credit"><span class="owner-mark" aria-hidden="true">m.</span><div><strong>MichaelWave Radio</strong><span>A world of sound. Owned by Michael.</span></div></div><p>Global directory by <a href="https://www.radio-browser.info/" target="_blank" rel="noopener noreferrer">Radio Browser</a>, plus researched Edo listings. <span id="updated"></span></p><p>Playback uses online streams. Availability varies; coverage is not guaranteed complete. Edo station sources are linked on each card.</p><button id="refresh" type="button">Refresh directory</button></footer>
+  </main>
+  <section id="player" class="player" aria-label="Radio player" data-status="idle"><div id="player-art" class="player-art" aria-hidden="true"><img class="radio-icon" src="radio.svg" alt=""></div><div class="playing-info"><span class="player-eyebrow">YOUR PERSONAL AIRWAVES</span><p id="player-name">Your next discovery awaits</p><span id="player-status" role="status">Choose a station to start listening</span><a id="station-link" hidden target="_blank" rel="noopener noreferrer">Station website</a></div><div class="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><a id="view-map" class="view-map" href="#station-map" hidden>View map ↗</a><button id="toggle" class="play-main" aria-label="Play station" disabled>▶</button><label class="volume">Volume<input id="volume" type="range" min="0" max="1" step="0.05" value="0.8"></label></section>
+  <audio id="audio" preload="none"></audio>
+</body></html>

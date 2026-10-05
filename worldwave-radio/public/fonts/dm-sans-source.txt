@@ -1,0 +1,4 @@
+DM Sans
+CSS: https://fonts.googleapis.com/css2?family=DM+Sans%3Awght%40400..700&display=swap
+Font: https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2
+License: https://raw.githubusercontent.com/google/fonts/main/ofl/dmsans/OFL.txt

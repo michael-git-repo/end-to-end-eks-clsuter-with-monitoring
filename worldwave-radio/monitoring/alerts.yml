@@ -1,0 +1,22 @@
+groups:
+  - name: michaelwave-radio
+    rules:
+      - alert: MichaelWaveUnavailable
+        expr: up{job="michaelwave-radio"} == 0 or absent(up{job="michaelwave-radio"})
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: MichaelWave metrics cannot be reached
+          description: Check the radio pod, EKS API access, and the monitoring token expiry.
+      - alert: MichaelWaveServerErrors
+        expr: sum(rate(michaelwave_http_requests_total{job="michaelwave-radio",status=~"5.."}[5m])) / clamp_min(sum(rate(michaelwave_http_requests_total{job="michaelwave-radio"}[5m])), 0.001) > 0.05
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: More than 5% of MichaelWave HTTP responses are server errors
+      - alert: MichaelWaveHighMemory
+        expr: michaelwave_process_resident_memory_bytes{job="michaelwave-radio"} > 230 * 1024 * 1024
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: MichaelWave memory usage is approaching its 256 MiB container limit

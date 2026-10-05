@@ -1,0 +1,20 @@
+{
+  "name": "worldwave-radio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "check": "node --check server.mjs && node --check stream-check.mjs && node --check visitors.mjs && node --check public/app.js && node --check public/catalogue.js && node --check public/playback.js && node --check public/globe.js && node --check public/globe-state.js && node --check public/visitors.js && node --check public/library.js && node --check metrics.mjs",
+    "build": "node scripts/build.mjs",
+    "directory": "node scripts/update-directory.mjs"
+  },
+  "dependencies": {
+    "d3-geo": "3.1.1",
+    "flag-icons": "7.5.0"
+  }
+}

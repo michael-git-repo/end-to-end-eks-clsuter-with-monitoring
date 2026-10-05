@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: worldwave-radio
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/michael-git-repo/end-to-end-eks-clsuter-with-monitoring.git
+    targetRevision: main
+    path: k8s
+    directory:
+      include: '{deployment.yml,service.yml}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: worldwave-radio
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

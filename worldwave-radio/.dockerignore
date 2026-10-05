@@ -1,0 +1,12 @@
+*
+!Dockerfile
+!package.json
+!package-lock.json
+!server.mjs
+!stream-check.mjs
+!visitors.mjs
+!metrics.mjs
+!public/
+!public/**
+!scripts/
+!scripts/build.mjs

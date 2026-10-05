@@ -14,6 +14,8 @@ When the scripts run successfully, this is the vibe:
 
 ## Included scripts
 
+The [Worldwave Radio project](worldwave-radio/README.md) adds a global radio app with a GitHub Actions security pipeline, Docker packaging, Docker Hub publication, report emails, and Argo CD deployment to an existing EKS cluster. Its workflow is in `.github/workflows/worldwave-radio.yml`.
+
 - awscli.sh
 - docker.sh
 - eksctl.sh

@@ -1,0 +1,21 @@
+# Merge these entries into the EXISTING Prometheus configuration on your machine.
+# Keep existing scrape_configs, rule_files, alerting and global settings.
+scrape_configs:
+  - job_name: michaelwave-radio
+    scheme: https
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    # Kubernetes API proxies to the application's named service port.
+    metrics_path: /api/v1/namespaces/worldwave-radio/services/worldwave-radio:http/proxy/metrics
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/worldwave/token
+    tls_config:
+      ca_file: /etc/prometheus/worldwave/eks-ca.crt
+      insecure_skip_verify: false
+    static_configs:
+      # EKS API hostname only, no https:// prefix. Use your existing cluster.
+      - targets: ['REPLACE_EKS_API_HOST:443']
+        labels: {application: michaelwave-radio, environment: production}
+rule_files:
+  - /etc/prometheus/rules/michaelwave-radio.yml

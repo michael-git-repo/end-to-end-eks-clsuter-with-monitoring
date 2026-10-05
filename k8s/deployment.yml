@@ -25,7 +25,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: radio
-          image: bleosas/devsecops-app:version3
+          image: bleosas/devsecops-app:version4
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 8080}]
           env: [{name: DATA_DIR, value: /app/data}]

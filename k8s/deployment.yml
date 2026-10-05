@@ -25,7 +25,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: radio
-          image: docker.io/bleosas/devsecops-app:REPLACE_IMAGE_TAG
+          image: bleosas/devsecops-app:808a84ba8f940a63d61cb6143b97bb4c256101a7
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 8080}]
           env: [{name: DATA_DIR, value: /app/data}]

@@ -107,6 +107,19 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+      - name: Export SonarQube report
+        if: always()
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if ! curl --fail --silent --show-error \
+            --user "$SONAR_TOKEN:" \
+            "$SONAR_HOST_URL/api/measures/component?component=worldwave-radio&metricKeys=alert_status,bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc" \
+            --output sonarqube-report.json; then
+            printf '{"message":"SonarQube measures could not be downloaded; see the dashboard.","dashboard":"%s/dashboard?id=worldwave-radio"}\n' "${SONAR_HOST_URL%/}" > sonarqube-report.json
+          fi
+
 
       # ====================================================
       # 7. LOGIN TO DOCKER HUB
@@ -123,12 +136,12 @@ jobs:
       # 8. BUILD DOCKER IMAGE
       # ====================================================
 
-      # Each image gets the GitHub commit number as its tag.
-      # This gives every build a unique version.
+      # Each image gets a unique versionN tag and immutable commit-SHA tag.
       - name: Build Docker image
         run: |
           docker build \
-          -t bleosas/devsecops-app:${{ github.sha }} worldwave-radio
+          -t bleosas/devsecops-app:${{ github.sha }} \
+          -t bleosas/devsecops-app:version${{ github.run_number }} worldwave-radio
 
 
       # ====================================================
@@ -136,13 +149,13 @@ jobs:
       # ====================================================
 
       # Scan the Docker image for vulnerabilities.
-      # The report is saved as trivy-report.txt.
+      # The report is saved as trivy-report.json.
       - name: Trivy Security Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'bleosas/devsecops-app:${{ github.sha }}'
-          format: 'table'
-          output: 'trivy-report.txt'
+          image-ref: 'bleosas/devsecops-app:version${{ github.run_number }}'
+          format: 'json'
+          output: 'trivy-report.json'
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
 
@@ -155,7 +168,7 @@ jobs:
         if: always()
         run: |
           echo "========== TRIVY REPORT =========="
-          cat trivy-report.txt || true
+          cat trivy-report.json || true
 
 
       # ====================================================
@@ -168,7 +181,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: trivy-security-report
-          path: trivy-report.txt
+          path: trivy-report.json
           retention-days: 30
 
 
@@ -180,6 +193,8 @@ jobs:
         run: |
           docker push \
           bleosas/devsecops-app:${{ github.sha }}
+          docker push \
+          bleosas/devsecops-app:version${{ github.run_number }}
 
 
       # ====================================================
@@ -195,7 +210,7 @@ jobs:
         run: |
 
           sed -i \
-          "s|image: .*|image: bleosas/devsecops-app:${{ github.sha }}|g" \
+          "s|image: .*|image: bleosas/devsecops-app:version${{ github.run_number }}|g" \
           k8s/deployment.yml
 
 
@@ -214,9 +229,18 @@ jobs:
           git add k8s/deployment.yml
 
           git diff --cached --quiet || \
-          git commit -m "Update image to ${{ github.sha }}"
+          git commit -m "Update image to version${{ github.run_number }}"
 
           git push
+
+
+      - name: Prepare email attachments
+        if: always()
+        run: |
+          test -f trivy-report.json || printf '{"message":"Trivy report was not generated; inspect the workflow logs."}\n' > trivy-report.json
+          test -f sonarqube-report.json || printf '{"message":"SonarQube report was not generated; inspect the workflow logs."}\n' > sonarqube-report.json
+          mkdir -p worldwave-radio/.scannerwork
+          test -f worldwave-radio/.scannerwork/report-task.txt || printf 'SonarQube scanner metadata was not generated; inspect the workflow logs.\n' > worldwave-radio/.scannerwork/report-task.txt
 
 
       # ====================================================
@@ -246,6 +270,9 @@ jobs:
 
           # Send the email to yourself
           to: ${{ secrets.GMAIL_USERNAME }}
+
+          # Attach Trivy and SonarQube reports
+          attachments: trivy-report.json,sonarqube-report.json,worldwave-radio/.scannerwork/report-task.txt
 
           from: GitHub DevSecOps Pipeline
 
@@ -278,18 +305,21 @@ jobs:
             SonarQube Quality Gate:
             ${{ steps.sonarqube.outcome }}
 
+            SonarQube Dashboard:
+            ${{ secrets.SONAR_HOST_URL }}/dashboard?id=worldwave-radio
+
             ================================
 
             Trivy Security Scan:
             Completed
 
-            The Trivy report is available as a
-            GitHub Actions artifact.
+            The Trivy JSON report, SonarQube measures report, and analysis metadata are attached.
 
             ================================
 
             Docker Image:
 
+            bleosas/devsecops-app:version${{ github.run_number }}
             bleosas/devsecops-app:${{ github.sha }}
 
             ================================

@@ -9,3 +9,6 @@ image.tar
 data/
 __pycache__/
 *.pyc
+lcov.info
+coverage.xml
+.coverage

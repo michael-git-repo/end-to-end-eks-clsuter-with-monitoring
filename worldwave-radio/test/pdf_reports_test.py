@@ -1,7 +1,10 @@
 import importlib.util
 import json
+import io
 import tempfile
 import unittest
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 from pathlib import Path
 
 
@@ -52,3 +55,54 @@ class PDFReportsTest(unittest.TestCase):
         report = sonar.export_report(env, {'ceTaskId': 'current-task'}, success)
         self.assertEqual(report['reportStatus'], 'available')
         self.assertEqual(pdf.sonar_story(report, {})[1], 'Quality gate: ERROR')
+
+    def test_export_command_uses_current_task_and_authenticated_api(self):
+        env = {'SONAR_HOST_URL': 'https://sonar.example/', 'SONAR_TOKEN': 'test-token'}
+        def respond(request, timeout):
+            self.assertEqual(request.get_header('Authorization'), 'Bearer test-token')
+            self.assertEqual(timeout, 30)
+            url = urlparse(request.full_url)
+            if url.path == '/api/ce/task':
+                self.assertEqual(parse_qs(url.query), {'id': ['current-task']})
+                result = {'task': {'status': 'SUCCESS', 'analysisId': 'analysis-123'}}
+            elif url.path == '/api/qualitygates/project_status':
+                self.assertEqual(parse_qs(url.query), {'analysisId': ['analysis-123']})
+                result = {'projectStatus': {'status': 'ERROR', 'conditions': [
+                    {'metricKey': 'new_coverage', 'status': 'ERROR', 'actualValue': '0', 'errorThreshold': '80', 'comparator': 'LT'}]}}
+            else:
+                self.assertEqual(url.path, '/api/measures/component')
+                result = {'component': {'measures': [{'metric': 'coverage', 'value': '45'}]}}
+            return io.BytesIO(json.dumps(result).encode())
+        with patch.dict(sonar.os.environ, env, clear=True), patch.object(sonar, 'urlopen', side_effect=respond), \
+             patch.object(Path, 'read_text', return_value='ceTaskId=current-task\nprojectKey=worldwave-radio\n'), \
+             patch.object(Path, 'write_text') as write:
+            sonar.main()
+        report = json.loads(write.call_args.args[0])
+        self.assertEqual(report['analysisId'], 'analysis-123')
+        story, status = pdf.sonar_story(report, {})
+        self.assertEqual(status, 'Quality gate: ERROR')
+        with tempfile.TemporaryDirectory() as folder:
+            pdf.build_pdf(Path(folder, 'gate.pdf'), story)
+            self.assertTrue(Path(folder, 'gate.pdf').read_bytes().startswith(b'%PDF-'))
+
+    def test_export_failure_never_leaks_credentials_or_uses_old_results(self):
+        with patch.dict(sonar.os.environ, {}, clear=True), \
+             patch.object(Path, 'read_text', side_effect=OSError('private details')), \
+             patch.object(Path, 'write_text') as write, patch.object(sonar, 'urlopen') as request:
+            sonar.main()
+        report = json.loads(write.call_args.args[0])
+        self.assertEqual(report['reportStatus'], 'unavailable')
+        self.assertNotIn('private details', report['message'])
+        request.assert_not_called()
+        with self.assertRaises(ValueError):
+            sonar.export_report({}, {}, request)
+
+    def test_invalid_nested_findings_and_invalid_json_are_unavailable(self):
+        for results in [[None], [{'Vulnerabilities': 'invalid'}], [{'Vulnerabilities': [None]}]]:
+            self.assertEqual(pdf.trivy_story({'SchemaVersion': 2, 'Results': results}, {})[1], 'Unavailable')
+        with tempfile.TemporaryDirectory() as folder:
+            report = Path(folder, 'scan.json')
+            for contents in ['[1, 2]', '{invalid']:
+                report.write_text(contents)
+                self.assertIsNone(pdf.load_report(report))
+        self.assertEqual(pdf.trivy_story({'SchemaVersion': 2, 'Results': [{'Vulnerabilities': []}]}, {})[1], '0 reported vulnerabilities')

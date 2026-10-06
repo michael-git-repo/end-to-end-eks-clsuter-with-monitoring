@@ -67,7 +67,11 @@ Use the three plain YAML files in [k8s](../k8s/README.md): deployment.yml, servi
 
 The workflow at ../.github/workflows/worldwave-radio.yml installs Node.js 24, runs app tests, scans with SonarQube, builds the Docker image, and scans it with Trivy. On main, the Gmail notification attaches `trivy-report.json`, `sonarqube-report.json`, and SonarQube analysis-task metadata. SonarQube's report file contains project measures when its API is available and otherwise contains a dashboard link. The workflow publishes both `versionN` and commit-SHA image tags to Docker Hub; the first run uses `version1`, the next `version2`, and so on. It then updates `k8s/deployment.yml` for Argo CD. Configure the GitHub secrets `DOCKER_PASSWORD`, `SONAR_TOKEN`, `SONAR_HOST_URL`, `GMAIL_USERNAME`, and `GMAIL_APP_PASSWORD`. The Docker Hub image repository is `bleosas/devsecops-app`.
 
-The current workflow configuration allows test/quality-gate failures to continue and reports Trivy findings without blocking publication. It does not currently run OWASP Dependency-Check. These are the current workflow's settings; review them before production use.
+Tests and the SonarQube quality gate must pass before image publication and deployment. The scan waits for the gate once, using `sonar.qualitygate.wait=true`. Trivy currently reports findings without blocking publication. The workflow does not currently run OWASP Dependency-Check.
+
+Coverage is generated **before** the SonarQube scan: `npm run test:coverage` writes JavaScript LCOV to `lcov.info`; Python 3.12 runs `python -m coverage run -m unittest discover -s test -p '*_test.py'` followed by `python -m coverage xml` to write `coverage.xml`. Install `coverage==7.10.7 reportlab==5.0.1` first for the Python tests. Both reports are uploaded as the `test-coverage` artifact and imported using the paths in `sonar-project.properties`. Run these commands from `worldwave-radio`. Generated reports are ignored by Git.
+
+SonarQube's 80% new-code coverage requirement is unchanged. The Node coverage summary only includes files exercised by tests; SonarQube also counts uncovered source files and applies its own new-code baseline. A successful local test run does not guarantee the quality gate passes. The next analysis must confirm the reports were imported and whether more tests are needed.
 
 Your existing external Prometheus/Grafana configuration and dashboard are documented in [monitoring setup](monitoring/README.md).
 

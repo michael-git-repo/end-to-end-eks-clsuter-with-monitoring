@@ -1,7 +1,8 @@
 [run]
 branch = True
 relative_files = True
-source = scripts
+# Preserve scripts/ in XML filenames so SonarQube resolves them from projectBaseDir.
+include = scripts/*.py
 
 [xml]
 output = coverage.xml

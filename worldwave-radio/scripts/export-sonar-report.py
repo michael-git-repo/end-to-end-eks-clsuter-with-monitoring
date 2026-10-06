@@ -1,6 +1,7 @@
 """Export current-run SonarQube results without logging credentials."""
 import json
 import os
+from base64 import b64encode
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -24,7 +25,9 @@ def export_report(env, metadata, get):
 def main():
     host = os.environ.get('SONAR_HOST_URL', '').rstrip('/')
     def get(path, params):
-        request = Request(host + '/' + path + '?' + urlencode(params), headers={'Authorization': 'Bearer ' + os.environ['SONAR_TOKEN']})
+        # SonarQube 9.9 expects the token as the Basic username, with no password.
+        credentials = b64encode((os.environ['SONAR_TOKEN'] + ':').encode()).decode('ascii')
+        request = Request(host + '/' + path + '?' + urlencode(params), headers={'Authorization': 'Basic ' + credentials})
         with urlopen(request, timeout=30) as response:
             return json.load(response)
     try:
@@ -33,6 +36,10 @@ def main():
     except Exception:
         report = {'reportStatus': 'unavailable', 'message': 'Current-run analysis or report API data is unavailable. Check scanner results, token Browse permission, and SonarQube connectivity.'}
     Path('sonarqube-report.json').write_text(json.dumps(report), encoding='utf-8')
+    if report.get('reportStatus') == 'available':
+        print('SonarQube quality gate: ' + json.dumps(report['qualityGate']))
+    else:
+        print(report['message'])
 
 
 if __name__ == '__main__':

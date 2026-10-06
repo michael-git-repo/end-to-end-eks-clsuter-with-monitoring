@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import io
+from base64 import b64decode
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -59,7 +60,9 @@ class PDFReportsTest(unittest.TestCase):
     def test_export_command_uses_current_task_and_authenticated_api(self):
         env = {'SONAR_HOST_URL': 'https://sonar.example/', 'SONAR_TOKEN': 'test-token'}
         def respond(request, timeout):
-            self.assertEqual(request.get_header('Authorization'), 'Bearer test-token')
+            scheme, credentials = request.get_header('Authorization').split(' ', 1)
+            self.assertEqual(scheme, 'Basic')
+            self.assertEqual(b64decode(credentials).decode(), 'test-token:')
             self.assertEqual(timeout, 30)
             url = urlparse(request.full_url)
             if url.path == '/api/ce/task':

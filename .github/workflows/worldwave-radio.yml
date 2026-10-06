@@ -90,6 +90,15 @@ jobs:
           python -m coverage run -m unittest discover -s test -p '*_test.py'
           python -m coverage xml
           python -m coverage report -m
+          python - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree
+          files = [item.attrib['filename'] for item in ElementTree.parse('coverage.xml').iter('class')]
+          expected = {path.as_posix() for path in Path('scripts').glob('*.py')}
+          if set(files) != expected or not all(Path(name).is_file() for name in files):
+              raise SystemExit('Coverage XML must identify every Python script by its project-relative scripts/ path.')
+          print('Validated Python coverage paths:', ', '.join(files))
+          PY
 
       - name: Save test coverage reports
         if: always()

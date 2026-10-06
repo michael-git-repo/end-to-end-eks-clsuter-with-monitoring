@@ -160,14 +160,6 @@ document.querySelectorAll('[data-collection]').forEach(button=>button.addEventLi
 $('clear-recent').addEventListener('click',()=>{library.clearRecent();lastRecorded=null;render();document.querySelector('[data-collection="recent"]').focus();$('library-feedback').textContent='Listening history cleared.';});
 $('surprise').addEventListener('click',()=>{const pool=matches.filter(s=>canDiscover(s)&&s.id!==selected?.id);if(pool.length){chooseStation(pool[Math.floor(Math.random()*pool.length)]);}else if(matches.some(canDiscover)){$('library-feedback').textContent='You are already tuned to the only available station in this view. Try a broader search.';}});
 document.querySelectorAll('[data-sound]').forEach(button=>button.addEventListener('click',()=>{collection='all';$('query').value=$('query').value===button.dataset.sound?'':button.dataset.sound;shown=24;markRegions();render();}));
-document.querySelectorAll('[data-destination]').forEach(button=>button.addEventListener('click',()=>{
-  reset();const destination=button.dataset.destination;
-  region=({africa:'Africa',europe:'Europe',americas:'Americas'})[destination]||'';fillCountries();
-  if(destination==='benin')$('country').value='NG';fillStates();
-  if(destination==='benin'){$('state').value='Edo';$('city').value='Benin City';}
-  markRegions();render();$('stations').scrollIntoView({behavior:document.documentElement.dataset.motion==='on'?'smooth':'instant',block:'start'});$('stations').focus({preventScroll:true});
-}));
-
 $('more').addEventListener('click',()=>{shown+=24;render();});
 function acceptDirectory(data){stations=mergeLocalStations(data.stations,localStations);mirrors=data.mirrors?.length?data.mirrors:mirrors;$('total-stations').textContent=stations.length.toLocaleString();$('total-countries').textContent=new Set(stations.map(s=>s.country).filter(Boolean)).size.toLocaleString();fillCountries();fillStates();render();$('updated').textContent='Directory updated '+new Date(data.updated).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+'.';}
 async function load(){try{const [data,local]=await Promise.all(['directory.json','edo-stations.json'].map(async url=>{const r=await fetch(url);if(!r.ok)throw new Error();return r.json();}));localStations=local;acceptDirectory(data);}catch{notice('The directory could not load. Check your connection and refresh this page.');$('count').textContent='Directory unavailable';$('grid').replaceChildren();$('grid').setAttribute('aria-busy','false');}}

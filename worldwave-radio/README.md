@@ -69,6 +69,8 @@ The workflow at ../.github/workflows/worldwave-radio.yml installs Node.js 24, ru
 
 Tests and the SonarQube quality gate must pass before image publication and deployment. The scan waits for the gate once, using `sonar.qualitygate.wait=true`. Trivy currently reports findings without blocking publication. The workflow does not currently run OWASP Dependency-Check.
 
+The SonarQube 9.9 JavaScript analyzer uses Node.js 18.20.8 through an explicit `sonar.nodejs.executable` path. Application dependencies, tests, and the Docker runtime use Node.js 24, which supplies the built-in SQLite visitor database. Node.js 18 is end-of-life; this is a compatibility setting for the existing SonarQube server. Upgrade SonarQube to a version supporting a maintained analyzer runtime before removing this setting.
+
 Coverage is generated **before** the SonarQube scan: `npm run test:coverage` writes JavaScript LCOV to `lcov.info`; Python 3.12 runs `python -m coverage run -m unittest discover -s test -p '*_test.py'` followed by `python -m coverage xml` to write `coverage.xml`. Install `coverage==7.10.7 reportlab==5.0.1` first for the Python tests. Both reports are uploaded as the `test-coverage` artifact and imported using the paths in `sonar-project.properties`. Run these commands from `worldwave-radio`. Generated reports are ignored by Git.
 
 SonarQube's 80% new-code coverage requirement is unchanged. The Node coverage summary only includes files exercised by tests; SonarQube also counts uncovered source files and applies its own new-code baseline. A successful local test run does not guarantee the quality gate passes. The next analysis must confirm the reports were imported and whether more tests are needed.

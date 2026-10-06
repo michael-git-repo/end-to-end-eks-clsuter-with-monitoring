@@ -49,7 +49,18 @@ jobs:
       # 2. INSTALL NODE.JS
       # ====================================================
 
-      - name: Setup Node.js
+      # SonarQube 9.9 requires an older analyzer runtime.
+      # Save its absolute path before selecting Node 24 for the application.
+      - name: Setup Node.js 18 for SonarQube
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.20.8"
+
+      - name: Save SonarQube Node.js path
+        id: sonar_node
+        run: echo "executable=$(node -p 'process.execPath')" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js 24 for application
         uses: actions/setup-node@v4
         with:
           node-version: "24"
@@ -121,6 +132,8 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         with:
           projectBaseDir: worldwave-radio
+          args: >-
+            -Dsonar.nodejs.executable=${{ steps.sonar_node.outputs.executable }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

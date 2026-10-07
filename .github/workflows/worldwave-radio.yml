@@ -100,7 +100,7 @@ jobs:
         run: |
           python -m coverage run -m unittest discover -s test -p '*_test.py'
           python -m coverage xml
-          python -m coverage report -m
+          python -m coverage report --fail-under=80 -m
           python - <<'PY'
           from pathlib import Path
           from xml.etree import ElementTree

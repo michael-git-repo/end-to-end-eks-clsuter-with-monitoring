@@ -5,17 +5,19 @@ RUN npm ci --ignore-scripts
 COPY public ./public
 COPY scripts/build.mjs ./scripts/build.mjs
 RUN npm run build
+RUN mkdir -p /app/data && chown 65532:65532 /app/data
 
-FROM node:24-alpine AS runtime
+# Distroless Node includes the runtime without npm/corepack package-manager dependencies.
+FROM gcr.io/distroless/nodejs24-debian13:nonroot AS runtime
 ENV NODE_ENV=production PORT=8080 DATA_DIR=/app/data
 WORKDIR /app
-COPY --from=build --chown=node:node /app/dist ./dist
-COPY --chown=node:node server.mjs ./server.mjs
-COPY --chown=node:node stream-check.mjs ./stream-check.mjs
-COPY --chown=node:node visitors.mjs ./visitors.mjs
-COPY --chown=node:node metrics.mjs ./metrics.mjs
-RUN mkdir -p /app/data && chown node:node /app/data
-USER node
+COPY --from=build --chown=65532:65532 /app/dist ./dist
+COPY --from=build --chown=65532:65532 /app/data ./data
+COPY --chown=65532:65532 server.mjs ./server.mjs
+COPY --chown=65532:65532 stream-check.mjs ./stream-check.mjs
+COPY --chown=65532:65532 visitors.mjs ./visitors.mjs
+COPY --chown=65532:65532 metrics.mjs ./metrics.mjs
+USER 65532:65532
 EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s CMD node -e "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["node", "server.mjs"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s CMD ["/nodejs/bin/node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+CMD ["server.mjs"]

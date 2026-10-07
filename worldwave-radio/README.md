@@ -21,7 +21,7 @@ Open http://localhost:8080. The app uses a bundled real Radio Browser catalogue 
 To build and test using plain Docker, run from this directory:
 
 ```sh
-docker build -t worldwave-radio:local .
+docker build --pull -t worldwave-radio:local .
 docker run -d --name worldwave-radio-test --mount type=volume,source=michaelwave-radio-data,target=/app/data --init --read-only --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8081:8080 worldwave-radio:local
 docker ps --filter name=worldwave-radio-test
 ```
@@ -37,13 +37,15 @@ docker start worldwave-radio-test
 After changing the app, rebuild the image, then replace the old test container:
 
 ```sh
-docker build -t worldwave-radio:local .
+docker build --pull -t worldwave-radio:local .
 docker stop worldwave-radio-test
 docker rm worldwave-radio-test
 docker run -d --name worldwave-radio-test --mount type=volume,source=michaelwave-radio-data,target=/app/data --init --read-only --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8081:8080 worldwave-radio:local
 ```
 
 Starting an existing container reuses its original image; replacing it uses the newly built image. No Docker Compose file is needed. EKS deployment continues to use the Kubernetes manifests under `../k8s/`.
+
+The build stage uses npm to prepare browser assets. The production stage removes npm, Yarn, and Corepack and starts the server directly with Node.js 24; the server only needs built-in Node modules. This removes the unused npm dependency tree that produced the 21 findings in the version11 Trivy report. CI and the commands above use `--pull` to refresh the base image. Always review a fresh Trivy scan of each resulting image; removing those packages does not guarantee future scans will remain clear.
 
 ## Edo State and Benin City stations
 

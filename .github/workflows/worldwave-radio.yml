@@ -167,7 +167,7 @@ jobs:
       # Each image gets a unique versionN tag and immutable commit-SHA tag.
       - name: Build Docker image
         run: |
-          docker build \
+          docker build --pull \
           -t bleosas/devsecops-app:${{ github.sha }} \
           -t bleosas/devsecops-app:version${{ github.run_number }} worldwave-radio
 

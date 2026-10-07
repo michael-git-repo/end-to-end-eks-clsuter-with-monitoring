@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: worldwave-radio
-          image: bleosas/devsecops-app:version12
+          image: bleosas/devsecops-app:version13
           imagePullPolicy: Always
 
           ports:

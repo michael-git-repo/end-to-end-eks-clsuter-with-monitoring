@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info test/*.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=82 --test-coverage-branches=82 --test-coverage-functions=82 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info test/*.test.mjs",
     "check": "node --check server.mjs && node --check stream-check.mjs && node --check visitors.mjs && node --check public/app.js && node --check public/catalogue.js && node --check public/playback.js && node --check public/globe.js && node --check public/globe-state.js && node --check public/visitors.js && node --check public/library.js && node --check metrics.mjs",
     "build": "node scripts/build.mjs",
     "directory": "node scripts/update-directory.mjs"

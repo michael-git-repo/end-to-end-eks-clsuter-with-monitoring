@@ -21,7 +21,10 @@ function setMotion(enabled){
   document.documentElement.dataset.motion=active?'on':'off';
   $('motion-toggle').setAttribute('aria-pressed',String(active));
   $('motion-toggle').disabled=motionPreference.matches;
-  $('motion-label').textContent=motionPreference.matches?'Reduced motion':active?'Motion on':'Motion off';
+  let label='Motion off';
+  if(motionPreference.matches)label='Reduced motion';
+  else if(active)label='Motion on';
+  $('motion-label').textContent=label;
   globe?.motionChanged();
 }
 setMotion(!motionPreference.matches);
@@ -46,7 +49,10 @@ const player=createPlayer(audio,{onChange(state){
   $('player-status').textContent=state.message;
   $('toggle').disabled=!selected;
   $('toggle').textContent=state.status==='playing'?'Ⅱ':'▶';
-  $('toggle').setAttribute('aria-label',state.status==='playing'?'Pause station':state.status==='error'?'Retry station':'Play station');
+  let toggleLabel='Play station';
+  if(state.status==='playing')toggleLabel='Pause station';
+  else if(state.status==='error')toggleLabel='Retry station';
+  $('toggle').setAttribute('aria-label',toggleLabel);
   const home=safeUrl(selected?.home||selected?.source);$('station-link').hidden=!home;
   if(home)$('station-link').href=home;
   $('station-link').textContent=selected?.home?'Station website':'Station details';
@@ -65,52 +71,183 @@ function notice(message){$('notice').textContent=message;$('notice').hidden=!mes
 function options(id,values,placeholder){const previous=$(id).value;$(id).replaceChildren(new Option(placeholder,''),...values.map(([value,label])=>new Option(label,value)));if(values.some(([value])=>value===previous))$(id).value=previous;}
 function fillCountries(){const codes=[...new Set(stations.filter(s=>!region||regions[region].includes(s.country)).map(s=>s.country))].filter(Boolean);options('country',codes.map(c=>[c,countryName(c)]).sort((a,b)=>a[1].localeCompare(b[1])),'All countries');}
 function fillStates(){const rows=filterStations(stations,{region,country:$('country').value});options('state',[...new Set(rows.map(s=>s.state).filter(Boolean))].sort().map(s=>[s,s]),'All states / regions');}
+function updateLibraryControls(saved){
+  $('saved-count').textContent=saved.saved.length;
+  let libraryNote='Save the stations you love. Your favourites stay in this browser.';
+  if(!saved.persistent)libraryNote='Your collection is available for this visit. Browser storage is unavailable.';
+  else if(collection==='recent')libraryNote='Your last 20 stations that played, saved only in this browser.';
+  $('library-note').textContent=libraryNote;
+  $('clear-recent').hidden=collection!=='recent'||!saved.recent.length;
+  $('surprise').disabled=!matches.some(canDiscover);
+}
+function updateFilterButtons(){
+  document.querySelectorAll('[data-collection]').forEach(button=>{
+    button.setAttribute('aria-pressed',String(button.dataset.collection===collection));
+  });
+  const sound=$('query').value.toLowerCase();
+  document.querySelectorAll('[data-sound]').forEach(button=>{
+    button.setAttribute('aria-pressed',String(button.dataset.sound===sound));
+  });
+}
+function resultsTitle(){
+  if(collection==='saved')return 'Your favourites';
+  if(collection==='recent')return 'Recently played';
+  const country=$('country').value;
+  const location=[$('city').value.trim(),$('state').value,country?countryName(country):region].filter(Boolean).join(' · ');
+  return location||'Around the world';
+}
+function updateResultsHeader(){
+  $('results-title').textContent=resultsTitle();
+  $('count').textContent=`${matches.length.toLocaleString()} stations · ${Math.min(shown,matches.length)} shown`;
+}
+function createFavouriteButton(station){
+  const saved=library.has(station.id);
+  const button=element('button','favourite',saved?'♥':'♡');
+  button.type='button';
+  button.dataset.station=station.id;
+  button.setAttribute('aria-pressed',String(saved));
+  button.setAttribute('aria-label',`${saved?'Remove':'Save'} ${station.name} ${saved?'from':'to'} favourites`);
+  button.addEventListener('click',()=>toggleFavourite(station));
+  return button;
+}
+function toggleFavourite(station){
+  library.toggle(station.id);
+  const action=library.has(station.id)?'saved to':'removed from';
+  $('library-feedback').textContent=`${station.name} ${action} favourites.`;
+  render();
+  const replacement=[...document.querySelectorAll('.favourite')].find(button=>button.dataset.station===station.id);
+  const focusTarget=replacement||document.querySelector('[data-collection="saved"]');
+  focusTarget.focus({preventScroll:true});
+}
+function createStationHeader(station){
+  const header=element('div','card-top');
+  let stationType='INTERNET RADIO';
+  if(station.frequency)stationType=`${station.frequency} FM`;
+  header.append(stationArt(station),element('span','station-type',stationType),createFavouriteButton(station));
+  return header;
+}
+function addStationFlag(info,station){
+  const flag=countryFlag(station.country,flagCodes);
+  if(!flag)return;
+  const badge=element('span','station-country');
+  const image=element('img');
+  image.src=flag.path;image.alt='';image.width=18;image.height=14;image.loading='lazy';
+  image.addEventListener('error',()=>image.remove(),{once:true});
+  badge.append(image,document.createTextNode(flag.name));
+  info.append(badge);
+}
+function createStationInfo(station){
+  const info=element('div');
+  const location=[station.city,station.state,countryName(station.country)].filter(Boolean).join(' · ');
+  info.append(element('h3','',station.name),element('p','location',location));
+  addStationFlag(info,station);
+  const reference=safeUrl(station.home||station.source);
+  if(reference){
+    const label=station.home?'Station website':'Station details';
+    const link=element('a','station-source',label);
+    link.href=reference;link.target='_blank';link.rel='noopener noreferrer';
+    info.append(link);
+  }
+  return info;
+}
+function createStationTags(station){
+  const tags=element('p','tags');
+  const source=station.tags||station.language||'Radio discovery';
+  for(const tag of source.split(',').map(value=>value.trim()).filter(Boolean).slice(0,3)){
+    tags.append(element('span','tag',tag));
+  }
+  return tags;
+}
+function createListenButton(station,available){
+  const playing=station.id===selected?.id&&player.snapshot().status==='playing';
+  let label='Listen';
+  if(!available.playable)label='Unavailable';
+  else if(playing)label='Pause';
+  const button=element('button','listen'+(playing?' is-playing':''),label);
+  button.disabled=!available.playable;
+  let action='Listen to';
+  if(!available.playable)action='Stream unavailable for';
+  else if(playing)action='Pause';
+  button.setAttribute('aria-label',`${action} ${station.name}`);
+  if(available.playable)button.addEventListener('click',()=>chooseStation(station));
+  return button;
+}
+function createStreamCheck(station){
+  const status=stationChecks.get(station.id);
+  const label=status?.pending?'Checking…':'Check again';
+  const retry=element('button','check-stream',label);
+  retry.disabled=Boolean(status?.pending);
+  retry.setAttribute('aria-label',`Check the stream for ${station.name}`);
+  retry.addEventListener('click',()=>recheckStation(station));
+  const controls=element('div','stream-check');
+  controls.append(retry);
+  const reason=status?.reason||station.streamReason;
+  if(reason){
+    const detail=element('p','hint',reason);
+    detail.setAttribute('role','status');
+    controls.append(detail);
+  }
+  return controls;
+}
+function createStationControls(station,card){
+  const available=availability(station);
+  card.dataset.playable=String(available.playable);
+  const bottom=element('div','card-bottom');
+  let streamLabel=available.label;
+  if(available.playable&&station.bitrate){
+    const codec=station.codec||'Audio';
+    streamLabel=`${station.bitrate} kbps · ${codec}`;
+  }
+  bottom.append(element('span','stream-label',streamLabel));
+  if(station.url)bottom.append(createListenButton(station,available));
+  let streamCheck=null;
+  if(station.local&&station.url)streamCheck=createStreamCheck(station);
+  return {bottom,streamCheck};
+}
+function createStationCard(station,index){
+  const active=station.id===selected?.id;
+  const card=element('article',active?'card active':'card');
+  if(index!==null){
+    card.classList.add('card-enter');
+    card.dataset.enter=String(Math.min(index,7));
+  }
+  card.prepend(createStationHeader(station),createStationInfo(station),createStationTags(station));
+  const controls=createStationControls(station,card);
+  card.append(controls.bottom);
+  if(controls.streamCheck)card.append(controls.streamCheck);
+  return card;
+}
+function showEmptyResults(){
+  if(!matches.length&&collection==='saved'){
+    notice('No favourites match this view. Save a station using its heart button, or reset your filters.');
+    return;
+  }
+  if(!matches.length&&collection==='recent'){
+    notice('No listening history matches this view. Play a station from Discover, or reset your filters.');
+    return;
+  }
+  if(!matches.length){
+    notice('No stations match these filters. Try a nearby city, choose a broader location, or reset your search.');
+    return;
+  }
+  notice('');
+}
 function render(){
   matches=library.filter(filterStations(stations,filters()),collection);
   if(collection!=='recent')matches.sort((a,b)=>Number(availability(b).playable)-Number(availability(a).playable));
-  const saved=library.snapshot();
-  $('saved-count').textContent=saved.saved.length;
-  $('library-note').textContent=!saved.persistent?'Your collection is available for this visit. Browser storage is unavailable.':collection==='recent'?'Your last 20 stations that played, saved only in this browser.':'Save the stations you love. Your favourites stay in this browser.';
-  $('clear-recent').hidden=collection!=='recent'||!saved.recent.length;
-  $('surprise').disabled=!matches.some(canDiscover);
-  document.querySelectorAll('[data-collection]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.collection===collection)));
-  document.querySelectorAll('[data-sound]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.sound===$('query').value.toLowerCase())));
-  $('results-title').textContent=[$('city').value.trim(),$('state').value,$('country').value?countryName($('country').value):region].filter(Boolean).join(' · ')||'Around the world';
-  if(collection!=='all')$('results-title').textContent=collection==='saved'?'Your favourites':'Recently played';
-  $('count').textContent=`${matches.length.toLocaleString()} stations · ${Math.min(shown,matches.length)} shown`;
-  $('grid').replaceChildren();$('grid').setAttribute('aria-busy','false');
-  if(!matches.length)notice('No stations match these filters. Try a nearby city, choose a broader location, or reset your search.');else notice('');
-  const visible=matches.slice(0,shown);let entering=0;
-  if(!matches.length&&collection!=='all')notice(collection==='saved'?'No favourites match this view. Save a station using its heart button, or reset your filters.':'No listening history matches this view. Play a station from Discover, or reset your filters.');
-  for(const s of visible){
-    const card=element('article','card'+(s.id===selected?.id?' active':''));
-    if(!visibleStationIds.has(s.id)){card.classList.add('card-enter');card.dataset.enter=String(Math.min(entering++,7));}
-    const top=element('div','card-top');top.append(stationArt(s),element('span','station-type',s.frequency?`${s.frequency} FM`:'INTERNET RADIO'));
-    const favourite=element('button','favourite',library.has(s.id)?'♥':'♡');
-    favourite.type='button';favourite.setAttribute('aria-pressed',String(library.has(s.id)));
-    favourite.setAttribute('aria-label',`${library.has(s.id)?'Remove':'Save'} ${s.name} ${library.has(s.id)?'from':'to'} favourites`);
-    favourite.addEventListener('click',()=>{library.toggle(s.id);$('library-feedback').textContent=`${s.name} ${library.has(s.id)?'saved to':'removed from'} favourites.`;render();const replacement=[...document.querySelectorAll('.favourite')].find(button=>button.dataset.station===s.id);(replacement||document.querySelector('[data-collection="saved"]')).focus({preventScroll:true});});
-    favourite.dataset.station=s.id;top.append(favourite);
-    const info=element('div');info.append(element('h3','',s.name),element('p','location',[s.city,s.state,countryName(s.country)].filter(Boolean).join(' · ')));
-    const tags=element('p','tags');
-    const flag=countryFlag(s.country,flagCodes);if(flag){const badge=element('span','station-country');const image=element('img');image.src=flag.path;image.alt='';image.width=18;image.height=14;image.loading='lazy';image.addEventListener('error',()=>image.remove(),{once:true});badge.append(image,document.createTextNode(flag.name));info.append(badge);}
-    for(const tag of (s.tags||s.language||'Radio discovery').split(',').map(value=>value.trim()).filter(Boolean).slice(0,3))tags.append(element('span','tag',tag));
-    const available=availability(s);
-    card.dataset.playable=String(available.playable);
-    const bottom=element('div','card-bottom');bottom.append(element('span','stream-label',available.playable&&s.bitrate?`${s.bitrate} kbps · ${s.codec||'Audio'}`:available.label));
-    if(s.url){const playing=s.id===selected?.id&&player.snapshot().status==='playing';const button=element('button','listen'+(playing?' is-playing':''),!available.playable?'Unavailable':playing?'Pause':'Listen');button.disabled=!available.playable;button.setAttribute('aria-label',`${!available.playable?'Stream unavailable for':playing?'Pause':'Listen to'} ${s.name}`);if(available.playable)button.addEventListener('click',()=>chooseStation(s));bottom.append(button);}
-    if(s.local&&s.url){
-      const status=stationChecks.get(s.id);
-      const retry=element('button','check-stream',status?.pending?'Checking…':'Check again');retry.disabled=!!status?.pending;
-      retry.setAttribute('aria-label',`Check the stream for ${s.name}`);retry.addEventListener('click',()=>recheckStation(s));
-      const controls=element('div','stream-check');controls.append(retry);
-      if(status?.reason||s.streamReason){const detail=element('p','hint',status?.reason||s.streamReason);detail.setAttribute('role','status');controls.append(detail);}
-      card.append(controls);
-    }
-    const reference=safeUrl(s.home||s.source);
-    if(reference){const link=element('a','station-source',s.home?'Station website':'Station details');link.href=reference;link.target='_blank';link.rel='noopener noreferrer';info.append(link);}
-    card.prepend(top,info,tags,bottom);$('grid').append(card);
-  }
+  updateLibraryControls(library.snapshot());
+  updateFilterButtons();
+  updateResultsHeader();
+  const grid=$('grid');
+  grid.replaceChildren();
+  grid.setAttribute('aria-busy','false');
+  showEmptyResults();
+  const visible=matches.slice(0,shown);
+  let entering=0;
+  visible.forEach(station=>{
+    const index=visibleStationIds.has(station.id)?null:entering++;
+    grid.append(createStationCard(station,index));
+  });
   visibleStationIds=new Set(visible.map(s=>s.id));
   $('more').hidden=shown>=matches.length;
 }
@@ -147,10 +284,20 @@ $('filters').addEventListener('submit',e=>e.preventDefault());
 for(const id of ['query','city'])$(id).addEventListener('input',()=>{shown=24;render();markRegions();});
 $('country').addEventListener('change',()=>{$('state').value='';fillStates();shown=24;render();markRegions();});
 $('state').addEventListener('change',()=>{shown=24;render();markRegions();});
-function markRegions(){document.querySelectorAll('.regions button').forEach(b=>{
-  const active=b.dataset.state?$('country').value===b.dataset.country&&$('state').value===b.dataset.state&&$('city').value===(b.dataset.city||''):b.dataset.country?$('country').value===b.dataset.country&&!$('state').value&&!$('city').value:b.dataset.region===region&&!$('country').value;
-  b.setAttribute('aria-pressed',String(active));
-});}
+function regionButtonIsActive(button){
+  if(button.dataset.state){
+    return $('country').value===button.dataset.country&&$('state').value===button.dataset.state&&$('city').value===(button.dataset.city||'');
+  }
+  if(button.dataset.country){
+    return $('country').value===button.dataset.country&&!$('state').value&&!$('city').value;
+  }
+  return button.dataset.region===region&&!$('country').value;
+}
+function markRegions(){
+  document.querySelectorAll('.regions button').forEach(button=>{
+    button.setAttribute('aria-pressed',String(regionButtonIsActive(button)));
+  });
+}
 function reset(){collection='all';region='';$('country').value='';$('state').value='';$('city').value='';$('query').value='';fillCountries();fillStates();markRegions();shown=24;render();}
 $('reset').addEventListener('click',reset);
 document.querySelectorAll('.regions button').forEach(button=>button.addEventListener('click',()=>{collection='all';region=button.dataset.region||'';$('country').value='';$('state').value='';$('city').value=button.dataset.city||'';$('query').value='';fillCountries();if(button.dataset.country)$('country').value=button.dataset.country;fillStates();if(button.dataset.state)$('state').value=button.dataset.state;markRegions();shown=24;render();}));

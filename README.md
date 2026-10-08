@@ -18,11 +18,11 @@ A global radio streaming application with automated delivery, container security
 <a id="architecture"></a>
 ## 🏗️ Project Architecture
 
-**Architecture image awaiting upload.** The supplied diagram will be stored at `images/architecture.png` and displayed here. No architecture image was available in the workspace during this documentation update.
-
-<!-- Enable this reference after the original architecture image is supplied:
 ![WorldWave Radio DevSecOps Architecture](images/architecture.png)
--->
+
+[View the full-size architecture diagram](images/architecture.png)
+
+The supplied diagram has been updated to show GitHub Actions, the `bleosas/devsecops-app` image repository, EC2 worker nodes for EKS and a separate EC2 monitoring server. Amazon EKS provides the managed control plane; application pods run on EC2 workers. The diagram is an architecture illustration, not a dashboard screenshot or proof of live service health. Node Exporter and Blackbox Exporter configuration still requires verification.
 
 **Delivery:** GitHub → GitHub Actions → dependency installation and tests → SonarQube → Docker build → Trivy → Docker Hub → Kubernetes manifest update → Argo CD → Amazon EKS.
 
@@ -30,7 +30,7 @@ A global radio streaming application with automated delivery, container security
 
 **Observability:** application `/metrics` → external Prometheus → Grafana. Node Exporter and Blackbox Exporter are described below as extensions whose deployment cannot be verified from this repository.
 
-> **Evidence boundary:** repository files confirm the delivery configuration and deployment intent. They do not prove that AWS resources are currently running. Existing EKS and external monitoring services are user-reported; unverified infrastructure is identified explicitly below. The architecture diagram will also need to be checked against this evidence when supplied.
+> **Evidence boundary:** repository files confirm the delivery configuration and deployment intent. Michael confirms that EC2 resources have been created for EKS workloads and the separate monitoring server. This is owner-provided deployment information; instance details and live AWS state have not been independently inspected. Infrastructure and exporter configuration that cannot be verified from the repository remain identified below.
 
 ## 📻 Project Overview
 
@@ -92,8 +92,8 @@ This repository integrates with an **existing EKS cluster**. It contains applica
 
 | AWS component | Purpose | Evidence and verification status |
 | --- | --- | --- |
-| **AWS EC2** | Can host cluster workers or supporting DevOps services. | EC2 is referenced in setup guidance; deployed instances and worker types are not verified. |
-| **Amazon EKS** | Managed Kubernetes control plane for the application. | Existing-cluster connection helper and Kubernetes deployment configuration are present; live cluster state is not verified. |
+| **AWS EC2** | Hosts EKS worker workloads and a separate monitoring server. | Owner confirms EC2 resources have been created for EKS and monitoring. Instance IDs, types and live state are not independently verified; provisioning definitions are not included. |
+| **Amazon EKS** | Managed Kubernetes control plane; EC2 workers run the application pods. | Owner confirms an existing cluster. Connection helper and Kubernetes configuration are present; live cluster and node-group state are not independently verified. |
 | **Amazon VPC** | Network boundary for cluster and supporting resources. | No VPC configuration or resource IDs are included. |
 | **Public subnets** | Can support internet-facing load balancers and public routing. | Subnet IDs, routes and actual placement are not verified. |
 | **Private subnets** | Can isolate worker nodes and internal workloads. | No private subnet or node-placement configuration is included. |
@@ -115,7 +115,7 @@ The AWS CLI, `eksctl`, `kubectl` and Terraform installation scripts are tooling 
 
 ## 📊 Monitoring and Observability
 
-Prometheus and Grafana are reported as running on another machine. The repository supplies integration configuration for those external services rather than installing them inside EKS.
+Prometheus and Grafana run on a separate EC2 monitoring server, as confirmed by the project owner. This server monitors the EKS environment from outside the cluster. The repository supplies integration configuration for those external services rather than provisioning the monitoring instance or installing them inside EKS.
 
 | Tool | Monitoring responsibility | Repository status |
 | --- | --- | --- |
@@ -274,18 +274,18 @@ This path requires an existing EKS cluster, AWS CLI credentials with cluster acc
 
 ## 🖼️ Portfolio Screenshots
 
-Genuine screenshots will be added when supplied. No dashboard images or successful scan results have been fabricated. Capture readable views with credentials and other sensitive information removed.
+The architecture illustration is included above. Genuine pipeline, analysis and dashboard screenshots will be added when supplied; the illustrative Grafana graphics in the diagram are not captured monitoring results. Capture readable views with credentials and other sensitive information removed.
 
 | Screenshot | Suggested file | Evidence to show |
 | --- | --- | --- |
-| Architecture | `images/architecture.png` | Actual system components and their connections |
+| Architecture — included | `images/architecture.png` | Delivery flow, owner-confirmed EC2 roles and monitoring design |
 | GitHub Actions | `images/github-actions.png` | Pipeline stages and a run tied to a commit |
 | SonarQube | `images/sonarqube.png` | Project quality gate, coverage and analysis date |
 | Trivy report | `images/trivy-report.png` | Image tag, scan date and vulnerability summary |
 | Argo CD | `images/argocd.png` | Application sync/health status and deployed revision |
 | Grafana | `images/grafana.png` | Dashboard panels with a visible time range and metrics |
 
-**Status:** architecture and screenshot assets are awaiting upload. The files above are proposed destinations, not existing evidence.
+**Status:** `images/architecture.png` is included. The five pipeline/report/dashboard screenshots are awaiting upload; their filenames are proposed destinations, not existing evidence.
 
 ## 🎯 Skills Demonstrated
 
@@ -315,7 +315,7 @@ Review the selected script before execution, use appropriate privileges, and ver
 - **Repository:** [WorldWave Radio source and configuration](https://github.com/michael-git-repo/end-to-end-eks-clsuter-with-monitoring)
 - **Radio website:** [http://radio.michaeldev.co.uk](http://radio.michaeldev.co.uk)
 - **CI/CD:** [GitHub Actions pipeline](https://github.com/michael-git-repo/end-to-end-eks-clsuter-with-monitoring/actions/workflows/worldwave-radio.yml)
-- **Architecture diagram:** [Architecture section — image awaiting upload](#architecture)
+- **Architecture diagram:** [WorldWave Radio DevSecOps Architecture](images/architecture.png)
 - **Application documentation:** [WorldWave Radio guide](worldwave-radio/README.md)
 - **Monitoring documentation:** [Prometheus and Grafana integration](worldwave-radio/monitoring/README.md)
 
